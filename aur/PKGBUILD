@@ -34,6 +34,10 @@ package() {
     "${pkgdir}/usr/share/doc/${pkgname}/COMMAND.md"
   install -Dm755 "scripts/install-user-service.sh" \
     "${pkgdir}/usr/share/${pkgname}/install-user-service.sh"
+  install -Dm755 "scripts/install-deps.sh" \
+    "${pkgdir}/usr/share/${pkgname}/install-deps.sh"
+  install -Dm755 "scripts/check-deps.sh" \
+    "${pkgdir}/usr/share/${pkgname}/check-deps.sh"
   install -Dm644 "systemd/kitsune-rendercore.service" \
     "${pkgdir}/usr/share/${pkgname}/kitsune-rendercore.service"
   install -Dm644 "systemd/kitsune-rendercore.env.example" \

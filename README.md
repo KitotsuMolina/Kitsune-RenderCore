@@ -42,7 +42,13 @@ cargo run
 ## Instalar dependencias del renderer (Wayland + Vulkan)
 
 ```bash
-./scripts/install-deps.sh
+kitsune-rendercore install-deps
+```
+
+Validar dependencias sin instalar:
+
+```bash
+kitsune-rendercore check-deps
 ```
 
 ## Instalar comando global (`kitsune-rendercore`)
@@ -135,7 +141,7 @@ Notas:
 Instalar archivos de servicio:
 
 ```bash
-./scripts/install-user-service.sh
+kitsune-rendercore install-service
 ```
 
 Editar variables:
@@ -153,14 +159,14 @@ $EDITOR ~/.config/kitsune-rendercore/video-map.conf
 Activar y arrancar:
 
 ```bash
-systemctl --user enable --now kitsune-rendercore.service
+kitsune-rendercore service enable
 ```
 
 Ver estado/log:
 
 ```bash
-systemctl --user status kitsune-rendercore.service
-journalctl --user -u kitsune-rendercore.service -f
+kitsune-rendercore service status
+kitsune-rendercore service logs
 ```
 
 ## Publicar release y AUR

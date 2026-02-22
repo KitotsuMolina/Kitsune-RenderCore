@@ -16,6 +16,7 @@ pub fn map_file_path_from_env() -> PathBuf {
         .unwrap_or_else(|_| default_map_file_path())
 }
 
+#[cfg(feature = "wayland-layer")]
 pub fn parse_video_map_env(raw: &str) -> BTreeMap<String, String> {
     let mut map = BTreeMap::new();
     for entry in raw.split(';') {
@@ -59,6 +60,7 @@ pub fn parse_video_map_file(path: &Path) -> BTreeMap<String, String> {
     map
 }
 
+#[cfg(feature = "wayland-layer")]
 pub fn merge_maps(
     env_map: BTreeMap<String, String>,
     file_map: BTreeMap<String, String>,
