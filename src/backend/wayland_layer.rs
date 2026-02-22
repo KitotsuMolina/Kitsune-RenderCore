@@ -373,7 +373,49 @@ struct FrameUniform {
     _pad: [f32; 2],
 }
 
-const FRAME_SHADER_WGSL: &str = r#"
+const FRAME_SHADER_WGSL_PLAIN: &str = r#"
+struct VsOut {
+    @builtin(position) pos: vec4<f32>,
+    @location(0) uv: vec2<f32>,
+};
+
+struct FrameUniform {
+    time_sec: f32,
+    aspect: f32,
+    _pad0: f32,
+    _pad1: f32,
+};
+
+@group(0) @binding(0) var src_tex: texture_2d<f32>;
+@group(0) @binding(1) var src_sampler: sampler;
+@group(0) @binding(2) var<uniform> uniforms: FrameUniform;
+
+@vertex
+fn vs_main(@builtin(vertex_index) vid: u32) -> VsOut {
+    var out: VsOut;
+    var pos = array<vec2<f32>, 3>(
+        vec2<f32>(-1.0, -3.0),
+        vec2<f32>(-1.0,  1.0),
+        vec2<f32>( 3.0,  1.0)
+    );
+    let p = pos[vid];
+    out.pos = vec4<f32>(p, 0.0, 1.0);
+    out.uv = 0.5 * (p + vec2<f32>(1.0, 1.0));
+    return out;
+}
+
+@fragment
+fn fs_main(in: VsOut) -> @location(0) vec4<f32> {
+    let base_uv = vec2<f32>(in.uv.x, 1.0 - in.uv.y);
+    let uv = fract(base_uv);
+    let _unused_time = uniforms.time_sec;
+    let _unused_aspect = uniforms.aspect;
+    let col = textureSample(src_tex, src_sampler, uv).rgb;
+    return vec4<f32>(col, 1.0);
+}
+"#;
+
+const FRAME_SHADER_WGSL_WAVE: &str = r#"
 struct VsOut {
     @builtin(position) pos: vec4<f32>,
     @location(0) uv: vec2<f32>,
@@ -840,9 +882,23 @@ fn init_render_program(
         ],
     });
 
+    let wave_enabled = std::env::var("KRC_WAVE_EFFECT")
+        .ok()
+        .map(|v| matches!(v.to_ascii_lowercase().as_str(), "1" | "true" | "yes" | "on"))
+        .unwrap_or(false);
+    if wave_enabled {
+        println!("[rendercore] wave effect enabled");
+    } else {
+        println!("[rendercore] wave effect disabled (plain video)");
+    }
+    let shader_source = if wave_enabled {
+        FRAME_SHADER_WGSL_WAVE
+    } else {
+        FRAME_SHADER_WGSL_PLAIN
+    };
     let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
         label: Some("kitsune-rendercore-frame-shader"),
-        source: wgpu::ShaderSource::Wgsl(FRAME_SHADER_WGSL.into()),
+        source: wgpu::ShaderSource::Wgsl(shader_source.into()),
     });
     let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
         label: Some("kitsune-rendercore-frame-pipeline-layout"),

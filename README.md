@@ -183,6 +183,7 @@ Notas:
 - `KRC_VIDEO_DEFAULT` actúa como fallback cuando un monitor no está en `KRC_VIDEO_MAP`.
 - `KRC_VIDEO_SPEED` controla la velocidad (`1.0` normal, `0.5` lenta, `1.25` rápida).
 - `KRC_HWACCEL` controla decode por hardware: `auto` (default), `nvdec`, `vaapi`, `none`.
+- `KRC_WAVE_EFFECT=true|false` activa/desactiva efecto de ondas en shader (default: `false`).
 - `KRC_QUALITY` presets: `low/720p`, `medium/1080p`, `high/1440p`, `ultra/4k`.
 - `KRC_SOURCE_WIDTH/HEIGHT` tienen prioridad sobre `KRC_QUALITY`.
 - Si la resolución pedida supera el límite de la GPU, se aplica fallback automático (clamp) sin panic.

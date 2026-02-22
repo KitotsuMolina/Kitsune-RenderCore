@@ -193,6 +193,7 @@ Publish/update AUR package:
 - `KRC_VIDEO_FPS`: input decode FPS.
 - `KRC_VIDEO_SPEED`: playback speed (`1.0` normal).
 - `KRC_HWACCEL`: `auto|nvdec|vaapi|none` for ffmpeg decode path.
+- `KRC_WAVE_EFFECT`: `true|false` for optional shader wave distortion (default off).
 - `KRC_QUALITY`: `low|720p`, `medium|1080p`, `high|1440p`, `ultra|4k`.
 - `KRC_SOURCE_WIDTH`: force source width.
 - `KRC_SOURCE_HEIGHT`: force source height.
