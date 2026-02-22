@@ -106,6 +106,20 @@ Create GitHub release (tag + binary asset):
 ./scripts/release-github.sh
 ```
 
+Semantic bump + release:
+
+```bash
+./scripts/release-github.sh --patch
+./scripts/release-github.sh --minor
+./scripts/release-github.sh --major
+```
+
+Set explicit version + release:
+
+```bash
+./scripts/release-github.sh --set 1.2.3
+```
+
 Publish/update AUR package:
 
 ```bash
