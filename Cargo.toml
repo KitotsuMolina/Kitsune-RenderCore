@@ -1,0 +1,27 @@
+[package]
+name = "kitsune-rendercore"
+version = "0.1.0"
+edition = "2024"
+
+[features]
+default = []
+wayland-layer = [
+  "dep:wayland-client",
+  "dep:wayland-backend",
+  "dep:smithay-client-toolkit",
+  "dep:wayland-protocols-wlr",
+  "dep:wgpu",
+  "dep:pollster",
+  "dep:raw-window-handle",
+  "dep:bytemuck",
+]
+
+[dependencies]
+wayland-client = { version = "0.31", optional = true }
+wayland-backend = { version = "0.3", features = ["client_system"], optional = true }
+smithay-client-toolkit = { version = "0.19", optional = true }
+wayland-protocols-wlr = { version = "0.3", features = ["client"], optional = true }
+wgpu = { version = "24", optional = true }
+pollster = { version = "0.4", optional = true }
+raw-window-handle = { version = "0.6", optional = true }
+bytemuck = { version = "1.24", features = ["derive"], optional = true }

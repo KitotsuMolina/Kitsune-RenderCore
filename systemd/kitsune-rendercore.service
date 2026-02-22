@@ -1,0 +1,21 @@
+[Unit]
+Description=Kitsune RenderCore Live Wallpaper
+After=graphical-session.target
+Wants=graphical-session.target
+
+[Service]
+Type=simple
+EnvironmentFile=%h/.config/kitsune-rendercore/env
+WorkingDirectory=%h/Programacion/Personal/Wallpaper/Kitsune-RenderCore
+ExecStart=%h/Programacion/Personal/Wallpaper/Kitsune-RenderCore/target/release/kitsune-rendercore
+Restart=on-failure
+RestartSec=2
+
+# Keep wallpaper renderer low-priority to avoid stealing resources from games/apps.
+Nice=10
+CPUWeight=20
+IOWeight=20
+OOMScoreAdjust=200
+
+[Install]
+WantedBy=default.target
