@@ -112,6 +112,60 @@ Opcionalmente puedes elegir archivo de mapa:
 target/debug/kitsune-rendercore set-video --monitor DP-1 --video /home/kitotsu/Videos/LiveWallpapers/new.mp4 --map-file /home/kitotsu/.config/kitsune-rendercore/video-map.conf
 ```
 
+Aplicar el mismo video a todos los monitores:
+
+```bash
+target/debug/kitsune-rendercore set-video --all --video /home/kitotsu/Videos/LiveWallpapers/new.mp4
+```
+
+Aplicar el mismo video a todos excepto algunos monitores:
+
+```bash
+target/debug/kitsune-rendercore set-video --all --video /home/kitotsu/Videos/LiveWallpapers/new.mp4 --except eDP-1,HDMI-A-1
+```
+
+Eliminar mapeo de un monitor:
+
+```bash
+target/debug/kitsune-rendercore unset-video --monitor DP-1
+```
+
+Estado actual (config + servicio + mapeo por monitor):
+
+```bash
+target/debug/kitsune-rendercore status
+```
+
+Estado en JSON (para integración con otros CLI):
+
+```bash
+target/debug/kitsune-rendercore status --json
+```
+
+Estado en JSON compacto:
+
+```bash
+target/debug/kitsune-rendercore status --json --compact
+```
+
+Guardar estado JSON en archivo:
+
+```bash
+target/debug/kitsune-rendercore status --json --file /tmp/krc-status.json
+```
+
+Eliminar todos los mapeos:
+
+```bash
+target/debug/kitsune-rendercore unset-video --all
+```
+
+Eliminar todos los mapeos excepto algunos:
+
+```bash
+target/debug/kitsune-rendercore unset-video --all --except eDP-1,HDMI-A-1
+```
+
 Si no ves el render, detén wallpapers previos:
 
 ```bash
@@ -128,6 +182,7 @@ Notas:
 - `KRC_VIDEO_MAP_FILE` ruta a archivo de mapeo por monitor (default: `~/.config/kitsune-rendercore/video-map.conf`).
 - `KRC_VIDEO_DEFAULT` actúa como fallback cuando un monitor no está en `KRC_VIDEO_MAP`.
 - `KRC_VIDEO_SPEED` controla la velocidad (`1.0` normal, `0.5` lenta, `1.25` rápida).
+- `KRC_HWACCEL` controla decode por hardware: `auto` (default), `nvdec`, `vaapi`, `none`.
 - `KRC_QUALITY` presets: `low/720p`, `medium/1080p`, `high/1440p`, `ultra/4k`.
 - `KRC_SOURCE_WIDTH/HEIGHT` tienen prioridad sobre `KRC_QUALITY`.
 - Si la resolución pedida supera el límite de la GPU, se aplica fallback automático (clamp) sin panic.

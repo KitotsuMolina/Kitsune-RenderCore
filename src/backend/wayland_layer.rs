@@ -351,6 +351,8 @@ struct VideoStream {
     frame_source: FrameSource,
     frame_pixels: Vec<u8>,
     current_video: Option<String>,
+    decode_interval: Duration,
+    next_decode_at: Instant,
 }
 
 struct VideoMapState {
@@ -612,17 +614,15 @@ impl WgpuShared {
                 continue;
             }
             stream.current_video = desired.clone();
+            let opts = VideoOptions::from_env();
+            stream.decode_interval = Duration::from_secs_f32((1.0f32 / opts.fps as f32).max(0.001));
+            stream.next_decode_at = Instant::now();
             stream.frame_source = if let Some(path) = desired {
                 println!(
                     "[rendercore] reloaded monitor={} (id={}) video={}",
                     output_name, output_id, path
                 );
-                FrameSource::from_video_path(
-                    path,
-                    stream.source_width,
-                    stream.source_height,
-                    VideoOptions::from_env(),
-                )
+                FrameSource::from_video_path(path, stream.source_width, stream.source_height, opts)
             } else {
                 println!(
                     "[rendercore] reloaded monitor={} (id={}) video=<none> (procedural fallback)",
@@ -694,10 +694,14 @@ impl WgpuShared {
             return Ok(());
         }
 
+        let now = Instant::now();
         for output_id in ready_outputs {
             let Some(stream) = self.video_streams.get_mut(output_id) else {
                 continue;
             };
+            if now < stream.next_decode_at {
+                continue;
+            }
             if stream
                 .frame_source
                 .fill_next_frame(&mut stream.frame_pixels)
@@ -722,6 +726,7 @@ impl WgpuShared {
                     },
                 );
                 self.uploaded_video_frames = self.uploaded_video_frames.wrapping_add(1);
+                stream.next_decode_at = now + stream.decode_interval;
             }
         }
 
@@ -966,6 +971,8 @@ fn init_video_stream(
         frame_source,
         frame_pixels,
         current_video,
+        decode_interval: Duration::from_secs_f32((1.0f32 / video_options.fps as f32).max(0.001)),
+        next_decode_at: Instant::now(),
     })
 }
 

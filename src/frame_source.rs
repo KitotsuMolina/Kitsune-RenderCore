@@ -6,6 +6,7 @@ use std::process::{Child, ChildStdout, Command, Stdio};
 pub struct VideoOptions {
     pub fps: u32,
     pub speed: f32,
+    pub hwaccel: HwAccel,
 }
 
 impl VideoOptions {
@@ -20,7 +21,35 @@ impl VideoOptions {
             .and_then(|v| v.parse::<f32>().ok())
             .filter(|v| *v > 0.0)
             .unwrap_or(1.0);
-        Self { fps, speed }
+        let hwaccel = HwAccel::from_env();
+        Self {
+            fps,
+            speed,
+            hwaccel,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy)]
+pub enum HwAccel {
+    Auto,
+    None,
+    Nvdec,
+    Vaapi,
+}
+
+impl HwAccel {
+    fn from_env() -> Self {
+        match std::env::var("KRC_HWACCEL")
+            .ok()
+            .map(|v| v.to_ascii_lowercase())
+            .as_deref()
+        {
+            Some("none") => Self::None,
+            Some("nvdec") | Some("cuda") => Self::Nvdec,
+            Some("vaapi") => Self::Vaapi,
+            _ => Self::Auto,
+        }
     }
 }
 
@@ -41,7 +70,14 @@ impl FrameSource {
             return Self::None;
         }
 
-        match FfmpegSource::new(video_path, width, height, options.fps, options.speed) {
+        match FfmpegSource::new(
+            video_path,
+            width,
+            height,
+            options.fps,
+            options.speed,
+            options.hwaccel,
+        ) {
             Ok(source) => Self::Ffmpeg(source),
             Err(err) => {
                 eprintln!("[rendercore] ffmpeg source disabled: {err}");
@@ -71,6 +107,7 @@ pub struct FfmpegSource {
     height: u32,
     fps: u32,
     speed: f32,
+    hwaccel: HwAccel,
     child: Child,
     stdout: ChildStdout,
 }
@@ -82,11 +119,12 @@ impl FfmpegSource {
         height: u32,
         fps: u32,
         speed: f32,
+        hwaccel: HwAccel,
     ) -> Result<Self, String> {
-        let (child, stdout) = spawn_ffmpeg(&video_path, width, height, fps, speed)?;
+        let (child, stdout) = spawn_ffmpeg(&video_path, width, height, fps, speed, hwaccel)?;
         println!(
-            "[rendercore] ffmpeg source enabled path={} target={}x{}@{} speed={}",
-            video_path, width, height, fps, speed
+            "[rendercore] ffmpeg source enabled path={} target={}x{}@{} speed={} hwaccel={:?}",
+            video_path, width, height, fps, speed, hwaccel
         );
         Ok(Self {
             video_path,
@@ -94,6 +132,7 @@ impl FfmpegSource {
             height,
             fps,
             speed,
+            hwaccel,
             child,
             stdout,
         })
@@ -108,6 +147,7 @@ impl FfmpegSource {
             self.height,
             self.fps,
             self.speed,
+            self.hwaccel,
         )?;
         self.child = child;
         self.stdout = stdout;
@@ -142,31 +182,38 @@ fn spawn_ffmpeg(
     height: u32,
     fps: u32,
     speed: f32,
+    hwaccel: HwAccel,
 ) -> Result<(Child, ChildStdout), String> {
     let vf = format!(
         "setpts=PTS/{speed:.4},fps={fps},scale={width}:{height}:force_original_aspect_ratio=increase,crop={width}:{height}"
     );
 
+    let mut args = vec!["-hide_banner", "-loglevel", "error"];
+    match hwaccel {
+        HwAccel::Auto => args.extend(["-hwaccel", "auto"]),
+        HwAccel::Nvdec => args.extend(["-hwaccel", "cuda"]),
+        HwAccel::Vaapi => args.extend(["-hwaccel", "vaapi"]),
+        HwAccel::None => {}
+    }
+    args.extend([
+        "-stream_loop",
+        "-1",
+        "-i",
+        video_path,
+        "-an",
+        "-sn",
+        "-dn",
+        "-vf",
+        &vf,
+        "-pix_fmt",
+        "rgba",
+        "-f",
+        "rawvideo",
+        "-",
+    ]);
+
     let mut child = Command::new("ffmpeg")
-        .args([
-            "-hide_banner",
-            "-loglevel",
-            "error",
-            "-stream_loop",
-            "-1",
-            "-i",
-            video_path,
-            "-an",
-            "-sn",
-            "-dn",
-            "-vf",
-            &vf,
-            "-pix_fmt",
-            "rgba",
-            "-f",
-            "rawvideo",
-            "-",
-        ])
+        .args(args)
         .stdin(Stdio::null())
         .stdout(Stdio::piped())
         .stderr(Stdio::null())

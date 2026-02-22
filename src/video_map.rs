@@ -16,7 +16,6 @@ pub fn map_file_path_from_env() -> PathBuf {
         .unwrap_or_else(|_| default_map_file_path())
 }
 
-#[cfg(feature = "wayland-layer")]
 pub fn parse_video_map_env(raw: &str) -> BTreeMap<String, String> {
     let mut map = BTreeMap::new();
     for entry in raw.split(';') {
@@ -82,7 +81,32 @@ pub fn set_monitor_video(path: &Path, monitor: &str, video: &str) -> Result<(), 
 
     let mut map = parse_video_map_file(path);
     map.insert(monitor.to_string(), video.to_string());
+    write_map_file(path, &map)
+}
 
+pub fn unset_monitor_video(path: &Path, monitor: &str) -> Result<bool, String> {
+    if monitor.trim().is_empty() {
+        return Err("monitor is empty".to_string());
+    }
+    let mut map = parse_video_map_file(path);
+    let removed = map.remove(monitor).is_some();
+    write_map_file(path, &map)?;
+    Ok(removed)
+}
+
+pub fn unset_all_monitors(path: &Path, except: &[String]) -> Result<usize, String> {
+    let mut map = parse_video_map_file(path);
+    if map.is_empty() {
+        return Ok(0);
+    }
+    let before = map.len();
+    map.retain(|k, _| except.iter().any(|e| e == k));
+    let after = map.len();
+    write_map_file(path, &map)?;
+    Ok(before.saturating_sub(after))
+}
+
+fn write_map_file(path: &Path, map: &BTreeMap<String, String>) -> Result<(), String> {
     if let Some(parent) = path.parent() {
         fs::create_dir_all(parent)
             .map_err(|e| format!("failed to create map directory {}: {e}", parent.display()))?;

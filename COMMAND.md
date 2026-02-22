@@ -16,6 +16,29 @@ KRC_VIDEO="/absolute/path/video.mp4" KRC_QUALITY=high kitsune-rendercore
 `kitsune-rendercore --help`  
 Shows all available commands with short descriptions.
 
+## Runtime status
+
+`kitsune-rendercore status`  
+Shows runtime config, Steam pause status, user service state, and monitor->video mapping.
+
+JSON output for automation:
+
+```bash
+kitsune-rendercore status --json
+```
+
+Compact JSON output:
+
+```bash
+kitsune-rendercore status --json --compact
+```
+
+Write JSON status to file:
+
+```bash
+kitsune-rendercore status --json --file /tmp/krc-status.json
+```
+
 ## Set one monitor video (hot reload)
 
 `kitsune-rendercore set-video --monitor <MONITOR> --video <VIDEO_PATH> [--map-file <PATH>]`  
@@ -29,6 +52,41 @@ kitsune-rendercore set-video --monitor DP-1 --video /home/user/Videos/live/a.mp4
 
 ```bash
 kitsune-rendercore set-video --monitor HDMI-A-1 --video /home/user/Videos/live/c.mp4 --map-file /home/user/.config/kitsune-rendercore/video-map.conf
+```
+
+Set same video on all monitors:
+
+```bash
+kitsune-rendercore set-video --all --video /home/user/Videos/live/all.mp4
+```
+
+Set same video on all monitors except some:
+
+```bash
+kitsune-rendercore set-video --all --video /home/user/Videos/live/all.mp4 --except eDP-1,HDMI-A-1
+```
+
+## Remove monitor mapping (hot reload)
+
+`kitsune-rendercore unset-video --monitor <MONITOR> [--map-file <PATH>]`  
+Removes one monitor mapping. If renderer is running, it reloads automatically.
+
+Example:
+
+```bash
+kitsune-rendercore unset-video --monitor HDMI-A-1
+```
+
+Remove all mappings:
+
+```bash
+kitsune-rendercore unset-video --all
+```
+
+Remove all mappings except some monitors:
+
+```bash
+kitsune-rendercore unset-video --all --except eDP-1,HDMI-A-1
 ```
 
 ## Check dependencies (no install)
@@ -134,6 +192,7 @@ Publish/update AUR package:
 - `KRC_VIDEO_DEFAULT`: fallback video if monitor not mapped.
 - `KRC_VIDEO_FPS`: input decode FPS.
 - `KRC_VIDEO_SPEED`: playback speed (`1.0` normal).
+- `KRC_HWACCEL`: `auto|nvdec|vaapi|none` for ffmpeg decode path.
 - `KRC_QUALITY`: `low|720p`, `medium|1080p`, `high|1440p`, `ultra|4k`.
 - `KRC_SOURCE_WIDTH`: force source width.
 - `KRC_SOURCE_HEIGHT`: force source height.
