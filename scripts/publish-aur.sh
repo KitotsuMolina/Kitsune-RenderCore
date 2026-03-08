@@ -24,7 +24,7 @@ fi
 
 if [[ -d "$TMP_DIR/.git" ]]; then
   git -C "$TMP_DIR" fetch origin
-  git -C "$TMP_DIR" checkout master || git -C "$TMP_DIR" checkout main
+  git -C "$TMP_DIR" checkout main || git -C "$TMP_DIR" checkout master
   git -C "$TMP_DIR" pull --rebase
 else
   rm -rf "$TMP_DIR"
