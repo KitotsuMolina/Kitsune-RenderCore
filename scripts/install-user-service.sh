@@ -43,9 +43,15 @@ APP_CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/kitsune-rendercore"
 SERVICE_DST="$USER_SYSTEMD_DIR/kitsune-rendercore.service"
 ENV_DST="$APP_CONFIG_DIR/env"
 MAP_DST="$APP_CONFIG_DIR/video-map.conf"
+BIN_PATH="${KRC_BIN_PATH:-$(command -v kitsune-rendercore || true)}"
+
+if [[ -z "$BIN_PATH" ]]; then
+  BIN_PATH="/usr/bin/kitsune-rendercore"
+fi
 
 mkdir -p "$USER_SYSTEMD_DIR" "$APP_CONFIG_DIR"
 cp -f "$SERVICE_SRC" "$SERVICE_DST"
+sed -i "s|^ExecStart=.*|ExecStart=${BIN_PATH}|" "$SERVICE_DST"
 
 if [[ ! -f "$ENV_DST" ]]; then
   cp -f "$ENV_EXAMPLE" "$ENV_DST"
@@ -66,5 +72,6 @@ fi
 
 systemctl --user daemon-reload
 echo "[ok] installed $SERVICE_DST"
+echo "[ok] using ExecStart=${BIN_PATH}"
 echo "[next] edit $ENV_DST, then run:"
 echo "  systemctl --user enable --now kitsune-rendercore.service"

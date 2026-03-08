@@ -6,8 +6,8 @@ Wants=graphical-session.target
 [Service]
 Type=simple
 EnvironmentFile=%h/.config/kitsune-rendercore/env
-WorkingDirectory=%h/Programacion/Personal/Wallpaper/Kitsune-RenderCore
-ExecStart=%h/Programacion/Personal/Wallpaper/Kitsune-RenderCore/target/release/kitsune-rendercore
+WorkingDirectory=%h
+ExecStart=/usr/bin/kitsune-rendercore
 Restart=on-failure
 RestartSec=2
 
