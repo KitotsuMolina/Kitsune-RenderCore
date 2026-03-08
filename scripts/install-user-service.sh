@@ -60,10 +60,23 @@ else
   echo "[ok] keeping existing $ENV_DST"
 fi
 
+# Migrate legacy hardcoded /home/<user>/ paths to current logged-in user HOME.
+if grep -Eq '^KRC_VIDEO_(DEFAULT|MAP_FILE)=/home/[^/]+' "$ENV_DST" || \
+   grep -Eq '^KRC_VIDEO_MAP=.*?/home/[^/]+' "$ENV_DST"; then
+  cp -f "$ENV_DST" "${ENV_DST}.bak"
+  HOME_ESCAPED="$(printf '%s' "$HOME" | sed 's/[\/&]/\\&/g')"
+  sed -i \
+    -e "s|^KRC_VIDEO_MAP_FILE=/home/[^/]*/.config/kitsune-rendercore/video-map.conf|KRC_VIDEO_MAP_FILE=${HOME_ESCAPED}/.config/kitsune-rendercore/video-map.conf|" \
+    -e "s|^KRC_VIDEO_DEFAULT=/home/[^/]*/|KRC_VIDEO_DEFAULT=${HOME_ESCAPED}/|" \
+    -e "/^KRC_VIDEO_MAP=/ s|/home/[^/]*/|${HOME_ESCAPED}/|g" \
+    "$ENV_DST"
+  echo "[ok] migrated hardcoded home paths in $ENV_DST to $HOME (backup: ${ENV_DST}.bak)"
+fi
+
 if [[ ! -f "$MAP_DST" ]]; then
   cat > "$MAP_DST" <<'EOF'
 # monitor=/absolute/path/video.mp4
-# DP-1=/home/kitotsu/Videos/LiveWallpapers/a.mp4
+# DP-1=/home/user/Videos/LiveWallpapers/a.mp4
 EOF
   echo "[ok] created $MAP_DST"
 else
