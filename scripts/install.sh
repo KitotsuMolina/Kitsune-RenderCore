@@ -13,7 +13,6 @@ usage() {
 Usage: ./scripts/install.sh [OPTIONS]
 
 Options:
-  --with-deps           Run ./scripts/install-deps.sh first
   --system              Install to /usr/local/bin (requires sudo)
   --root <PATH>         Custom cargo install root (default: ~/.local)
   --no-force            Do not pass --force to cargo install
@@ -21,16 +20,12 @@ Options:
 EOF
 }
 
-with_deps=false
 system_install=false
 cargo_root="${HOME}/.local"
 force_flag="--force"
 
 while (($#)); do
   case "$1" in
-    --with-deps)
-      with_deps=true
-      ;;
     --system)
       system_install=true
       ;;
@@ -59,10 +54,6 @@ while (($#)); do
 done
 
 cd "$ROOT_DIR"
-
-if [[ "$with_deps" == true ]]; then
-  ./scripts/install-deps.sh
-fi
 
 log "Installing ${BIN_NAME} with cargo (feature: wayland-layer)"
 cargo install --path . --locked --features wayland-layer ${force_flag} --root "$cargo_root"

@@ -39,16 +39,13 @@ Proyecto inicializado con esqueleto modular:
 cargo run
 ```
 
-## Instalar dependencias del renderer (Wayland + Vulkan)
+## Dependencias y servicio (centralizado en kitowall)
+
+Instalar y validar dependencias/runtime desde `kitowall`:
 
 ```bash
-kitsune-rendercore install-deps
-```
-
-Validar dependencias sin instalar:
-
-```bash
-kitsune-rendercore check-deps
+kitowall live doctor --fix
+kitowall live doctor
 ```
 
 ## Instalar comando global (`kitsune-rendercore`)
@@ -56,7 +53,7 @@ kitsune-rendercore check-deps
 Instalación de usuario (`~/.local/bin`):
 
 ```bash
-./scripts/install.sh --with-deps
+./scripts/install.sh
 ```
 
 Instalación de sistema (`/usr/local/bin`):
@@ -197,7 +194,7 @@ Notas:
 Instalar archivos de servicio:
 
 ```bash
-kitsune-rendercore install-service
+kitowall live service-autostart install
 ```
 
 Editar variables:
@@ -215,13 +212,14 @@ $EDITOR ~/.config/kitsune-rendercore/video-map.conf
 Activar y arrancar:
 
 ```bash
-kitsune-rendercore service enable
+kitowall live service-autostart enable
+kitowall live service-autostart start
 ```
 
 Ver estado/log:
 
 ```bash
-kitsune-rendercore service status
+kitowall live service-autostart status
 kitsune-rendercore service logs
 ```
 

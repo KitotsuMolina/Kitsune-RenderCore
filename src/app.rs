@@ -5,7 +5,6 @@ use crate::video_map::{
     map_file_path_from_env, parse_video_map_env, parse_video_map_file, set_monitor_video,
     unset_all_monitors, unset_monitor_video,
 };
-use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 
 pub fn run() -> Result<(), String> {
@@ -14,9 +13,9 @@ pub fn run() -> Result<(), String> {
         Some("set-video") => return run_set_video(&args[2..]),
         Some("unset-video") => return run_unset_video(&args[2..]),
         Some("status") => return run_status(&args[2..]),
-        Some("install-deps") => return run_script("install-deps.sh", &[]),
-        Some("check-deps") => return run_script("check-deps.sh", &[]),
-        Some("install-service") => return run_script("install-user-service.sh", &[]),
+        Some("install-deps") => return run_kitowall(&["live", "doctor", "--fix"]),
+        Some("check-deps") => return run_kitowall(&["live", "doctor"]),
+        Some("install-service") => return run_kitowall(&["live", "service-autostart", "install"]),
         Some("service") => return run_service(&args[2..]),
         Some("--help") | Some("-h") | Some("help") => {
             print_help();
@@ -424,7 +423,7 @@ fn run_service(args: &[String]) -> Result<(), String> {
             "journalctl",
             &["--user", "-u", "kitsune-rendercore.service", "-f"],
         ),
-        "install" => run_script("install-user-service.sh", &[]),
+        "install" => run_kitowall(&["live", "service-autostart", "install"]),
         "--help" | "-h" | "help" => {
             print_service_help();
             Ok(())
@@ -433,21 +432,26 @@ fn run_service(args: &[String]) -> Result<(), String> {
     }
 }
 
-fn run_script(script_name: &str, extra_args: &[&str]) -> Result<(), String> {
-    let path = find_script_path(script_name)
-        .ok_or_else(|| format!("could not find script '{script_name}' in known locations"))?;
-    let mut cmd = Command::new(path);
-    cmd.args(extra_args);
-    cmd.stdin(Stdio::inherit())
+fn run_kitowall(args: &[&str]) -> Result<(), String> {
+    let status = Command::new("kitowall")
+        .args(args)
+        .stdin(Stdio::inherit())
         .stdout(Stdio::inherit())
-        .stderr(Stdio::inherit());
-    let status = cmd
+        .stderr(Stdio::inherit())
         .status()
-        .map_err(|e| format!("failed to execute script {script_name}: {e}"))?;
+        .map_err(|e| {
+            format!(
+                "failed to execute kitowall {}: {e}. Install kitowall CLI first.",
+                args.join(" ")
+            )
+        })?;
     if status.success() {
         Ok(())
     } else {
-        Err(format!("script {script_name} exited with status: {status}"))
+        Err(format!(
+            "kitowall {} exited with status: {status}",
+            args.join(" ")
+        ))
     }
 }
 
@@ -514,32 +518,6 @@ fn escape_json(s: &str) -> String {
     s.replace('\\', "\\\\").replace('"', "\\\"")
 }
 
-fn find_script_path(script_name: &str) -> Option<PathBuf> {
-    let mut candidates = Vec::<PathBuf>::new();
-    if let Ok(share) = std::env::var("KRC_SHARE_DIR") {
-        candidates.push(Path::new(&share).join(script_name));
-    }
-    candidates.push(Path::new("/usr/share/kitsune-rendercore").join(script_name));
-
-    if let Ok(exe) = std::env::current_exe() {
-        if let Some(exe_dir) = exe.parent() {
-            // Source build: target/debug/kitsune-rendercore -> ../../scripts/*.sh
-            candidates.push(exe_dir.join("../../scripts").join(script_name));
-            // Optional packaged layout
-            candidates.push(
-                exe_dir
-                    .join("../share/kitsune-rendercore")
-                    .join(script_name),
-            );
-        }
-    }
-    if let Ok(cwd) = std::env::current_dir() {
-        candidates.push(cwd.join("scripts").join(script_name));
-    }
-
-    candidates.into_iter().find(|p| p.is_file())
-}
-
 fn print_help() {
     println!("kitsune-rendercore - Wayland live wallpaper renderer");
     println!();
@@ -568,13 +546,13 @@ fn print_help() {
     println!("    Show current runtime/service/monitor mapping in text or JSON.");
     println!();
     println!("  kitsune-rendercore check-deps");
-    println!("    Validate runtime/build dependencies without installing anything.");
+    println!("    Validate runtime dependencies via: kitowall live doctor");
     println!();
     println!("  kitsune-rendercore install-deps");
-    println!("    Install required dependencies for your distro (calls install-deps.sh).");
+    println!("    Install runtime dependencies via: kitowall live doctor --fix");
     println!();
     println!("  kitsune-rendercore install-service");
-    println!("    Install user systemd service files and default env/map configs.");
+    println!("    Install user systemd service via: kitowall live service-autostart install");
     println!();
     println!(
         "  kitsune-rendercore service <install|enable|disable|start|stop|restart|status|logs>"
@@ -652,7 +630,7 @@ fn print_service_help() {
     );
     println!();
     println!("Actions:");
-    println!("  install  Install service/env/map files for user session.");
+    println!("  install  Install service/env/map files via kitowall CLI.");
     println!("  enable   Enable and start service now.");
     println!("  disable  Disable and stop service now.");
     println!("  start    Start service.");

@@ -92,20 +92,17 @@ kitsune-rendercore unset-video --all --except eDP-1,HDMI-A-1
 ## Check dependencies (no install)
 
 `kitsune-rendercore check-deps`  
-Checks required binaries and core runtime dependencies. Does not install anything.
+Delegates to `kitowall live doctor` (runtime validation without installing).
 
 ## Install dependencies
 
 `kitsune-rendercore install-deps`  
-Installs dependencies for the detected distro (wrapper over `install-deps.sh`).
+Delegates to `kitowall live doctor --fix` (installs runtime deps on host).
 
 ## Install service files
 
 `kitsune-rendercore install-service`  
-Installs user service assets:
-- `~/.config/systemd/user/kitsune-rendercore.service`
-- `~/.config/kitsune-rendercore/env`
-- `~/.config/kitsune-rendercore/video-map.conf`
+Delegates to `kitowall live service-autostart install`.
 
 ## Service management
 
@@ -113,7 +110,7 @@ Installs user service assets:
 Manages `systemd --user` service.
 
 Available actions:
-- `install`: same as `install-service`
+- `install`: delegates to `kitowall live service-autostart install`
 - `enable`: enable + start
 - `disable`: disable + stop
 - `start`: start service
@@ -147,7 +144,7 @@ cargo build --features wayland-layer
 Install command to user PATH (`~/.local/bin`):
 
 ```bash
-./scripts/install.sh --with-deps
+./scripts/install.sh
 ```
 
 Install command system-wide (`/usr/local/bin`):
