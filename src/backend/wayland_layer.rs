@@ -31,6 +31,24 @@ pub struct WaylandLayerBackend {
     state: WaylandLayerState,
 }
 
+impl Drop for WaylandLayerBackend {
+    fn drop(&mut self) {
+        self.bootstrapped = false;
+
+        // Drop GPU surfaces/resources before tearing down Wayland objects they reference.
+        self.wgpu_shared.take();
+
+        // Drop protocol objects before the connection/event queue.
+        self.state.layer_surfaces.clear();
+        self.state.outputs.clear();
+        self.state.layer_shell = None;
+        self.state.compositor = None;
+
+        self.event_queue = None;
+        self.connection = None;
+    }
+}
+
 impl LayerBackend for WaylandLayerBackend {
     fn name(&self) -> &'static str {
         "wayland-layer"
@@ -254,7 +272,8 @@ impl WaylandLayerState {
             );
 
             layer_surface.set_anchor(Anchor::Top | Anchor::Bottom | Anchor::Left | Anchor::Right);
-            layer_surface.set_exclusive_zone(-1);
+            // Wallpaper surfaces should not reserve layout space from the compositor.
+            layer_surface.set_exclusive_zone(0);
             layer_surface.set_size(0, 0);
             surface.commit();
 
