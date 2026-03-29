@@ -11,7 +11,7 @@ pkgbase = kitsune-rendercore
 	depends = libxkbcommon
 	depends = libdrm
 	depends = vulkan-icd-loader
-	source = kitsune-rendercore-2.1.0.tar.gz::https://github.com/KitotsuMolina/Kitsune-RenderCore/archive/refs/tags/v2.1.0.tar.gz
+	source = kitsune-rendercore-2.1.1.tar.gz::https://github.com/KitotsuMolina/Kitsune-RenderCore/archive/refs/tags/v2.1.1.tar.gz
 	sha256sums = SKIP
 
 pkgname = kitsune-rendercore
