@@ -198,7 +198,12 @@ impl LayerBackend for WaylandLayerBackend {
 
         let ready_outputs = self.state.ready_output_ids();
         if let Some(shared) = self.wgpu_shared.as_mut() {
-            shared.render_textured(self.frame_index, &self.state.outputs, &ready_outputs)?;
+            shared.render_textured(
+                self.frame_index,
+                &self.state.outputs,
+                &self.state.layer_surfaces,
+                &ready_outputs,
+            )?;
         }
         if !ready_outputs.is_empty() {
             self.state
@@ -282,6 +287,8 @@ impl WaylandLayerState {
                 layer_surface,
                 output_global_name: output.global_name,
                 configured: false,
+                configured_width: None,
+                configured_height: None,
                 needs_redraw: false,
                 frame_callback_pending: false,
                 frame_callback: None,
@@ -329,6 +336,8 @@ struct LayerSurfaceSlot {
     layer_surface: ZwlrLayerSurfaceV1,
     output_global_name: u32,
     configured: bool,
+    configured_width: Option<u32>,
+    configured_height: Option<u32>,
     needs_redraw: bool,
     frame_callback_pending: bool,
     frame_callback: Option<wl_callback::WlCallback>,
@@ -698,6 +707,7 @@ impl WgpuShared {
         &mut self,
         frame_index: u64,
         outputs: &BTreeMap<u32, OutputSlot>,
+        layer_surfaces: &[LayerSurfaceSlot],
         ready_outputs: &[u32],
     ) -> Result<(), String> {
         self.maybe_reload_video_map(outputs);
@@ -709,8 +719,17 @@ impl WgpuShared {
             let Some(out) = outputs.get(&rs.output_global_name) else {
                 continue;
             };
-            let width = out.width.unwrap_or(1920).max(1);
-            let height = out.height.unwrap_or(1080).max(1);
+            let configured_size = layer_surfaces
+                .iter()
+                .find(|slot| slot.output_global_name == rs.output_global_name)
+                .and_then(|slot| match (slot.configured_width, slot.configured_height) {
+                    (Some(width), Some(height)) if width > 0 && height > 0 => Some((width, height)),
+                    _ => None,
+                });
+            let (width, height) = configured_size.unwrap_or((
+                out.width.unwrap_or(1920).max(1),
+                out.height.unwrap_or(1080).max(1),
+            ));
             if width != rs.width || height != rs.height {
                 rs.width = width;
                 rs.height = height;
@@ -1213,6 +1232,8 @@ impl Dispatch<ZwlrLayerSurfaceV1, u32> for WaylandLayerState {
                 layer_surface.ack_configure(serial);
                 if let Some(slot) = state.layer_surfaces.get_mut(*index as usize) {
                     slot.configured = true;
+                    slot.configured_width = (width > 0).then_some(width);
+                    slot.configured_height = (height > 0).then_some(height);
                     slot.needs_redraw = true;
                     if width > 0 && height > 0 {
                         slot.surface.commit();
@@ -1222,6 +1243,8 @@ impl Dispatch<ZwlrLayerSurfaceV1, u32> for WaylandLayerState {
             zwlr_layer_surface_v1::Event::Closed => {
                 if let Some(slot) = state.layer_surfaces.get_mut(*index as usize) {
                     slot.configured = false;
+                    slot.configured_width = None;
+                    slot.configured_height = None;
                     slot.needs_redraw = false;
                     slot.frame_callback_pending = false;
                     slot.frame_callback = None;
